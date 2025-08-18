@@ -1,11 +1,9 @@
-name: E2E Accelerator EC2 Test
+name: E2E PD-Disaggregation Test
 
 on:
   issue_comment:
-    # Runs with a PR comment /run-e2e-precise-and-scheduling or /run-e2e-precise-and-scheduling-istio
+    # Runs with a PR comment /run-e2e-pd or /run-e2e-pd-istio
     types: [created]
-#  schedule: # TODO: enable once validated functional
-#    - cron: '0 8 * * *'  # 4AM Eastern (08:00 UTC)
   workflow_dispatch:
     inputs:
       pr_or_branch:
@@ -38,8 +36,8 @@ jobs:
         github.event_name == 'issue_comment' &&
         github.event.issue.pull_request &&
         (
-          contains(github.event.comment.body, '/run-e2e-precise-and-scheduling') ||
-          contains(github.event.comment.body, '/run-e2e-precise-and-scheduling-istio')
+          contains(github.event.comment.body, '/run-e2e-pd') ||
+          contains(github.event.comment.body, '/run-e2e-pd-istio')
         ) &&
         (
           github.event.comment.author_association == 'OWNER' ||
@@ -52,7 +50,7 @@ jobs:
       instance_id: ${{ steps.launch.outputs.instance_id }}
       instance_ip: ${{ steps.launch.outputs.instance_ip }}
     env:
-      # g6.12xlarge-4xL4-24GB-GPU; 2 GPUs per matrix deployment
+      # g6.12xlarge-4xL4-24GB-GPU
       INSTANCE_TYPE: g6.12xlarge
       AMI_ID: ami-020cba7c55df1f615
       KEY_NAME: ${{ secrets.SSH_KEY_NAME_BOTH }}
@@ -63,8 +61,8 @@ jobs:
       PR_OR_BRANCH: ${{ github.event.inputs.pr_or_branch || github.event.issue.number }}
       NAMESPACE: ${{ github.event.inputs.namespace }}
       GATEWAY_TYPE: ${{ github.event.inputs.gateway_type ||
-        (contains(github.event.comment.body || '', '/run-e2e-precise-and-scheduling-istio') && 'istio') ||
-        'kgateway' }}
+        (contains(github.event.comment.body || '', '/run-e2e-pd-istio') && 'istio') ||
+        'istio' }}
 
     steps:
       - name: Checkout
@@ -121,7 +119,7 @@ jobs:
                   \"DeleteOnTermination\": true
                 }
               }]" \
-            --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=llmd-github-ci-runner}]" \
+            --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=llmd-pd-ci-runner}]" \
             --query 'Instances[0].InstanceId' \
             --output text)
 
@@ -164,7 +162,7 @@ jobs:
       - name: Setup installer pre-requisites (clone + checkout)
         id: setup-pre-requisite
         run: |
-          # pass PR_OR_BRANCH into the remote shell’s env, keep heredoc single‑quoted
+          # pass PR_OR_BRANCH into the remote shell's env, keep heredoc single‑quoted
           ssh -o StrictHostKeyChecking=no -i key.pem \
               ubuntu@$INSTANCE_IP \
               "PR_OR_BRANCH=$PR_OR_BRANCH bash -s" <<'EOF'
@@ -173,6 +171,12 @@ jobs:
 
             sudo apt-get update -y
             sudo apt-get install -y git
+
+            # Install yq for YAML processing
+            echo "Installing yq..."
+            sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq && \
+            sudo chmod +x /usr/local/bin/yq
+            yq --version
 
             REPO_URL="https://github.com/llm-d-incubation/llm-d-infra.git"
             REPO_DIR=$(basename "$REPO_URL" .git)
@@ -189,6 +193,89 @@ jobs:
               echo "🛠️  Checking out branch $PR_OR_BRANCH"
               git checkout "$PR_OR_BRANCH"
             fi
+          EOF
+
+      - name: Apply PD-Disaggregation slim transformation
+        id: pd-transformation
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP <<'EOF'
+            set -euo pipefail
+            set -x
+            cd llm-d-infra
+
+            echo "Applying pd-disaggregation slim values..."
+            # Transform ms-pd/values.yaml to a scaled-down deployment
+            # Change model to lightweight version
+            yq e '.modelArtifacts.uri = "hf://Qwen/Qwen3-0.6B"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e '.routing.modelName = "Qwen/Qwen3-0.6B"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.decode.containers[0].args[] | select(. == "--tensor-parallel-size" or . == "4"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.decode.containers[0].args[] | select(. == "--max-model-len" or . == "32000"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.prefill.containers[0].args[] | select(. == "--max-model-len" or . == "32000"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.decode.containers[0].resources.limits.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.decode.containers[0].resources.requests.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.decode.containers[0].resources.limits.cpu)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.decode.containers[0].resources.requests.cpu)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.decode.containers[0].resources.limits."rdma/ib")' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.decode.containers[0].resources.requests."rdma/ib")' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.prefill.containers[0].resources.limits.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.prefill.containers[0].resources.requests.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.prefill.containers[0].resources.limits.cpu)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.prefill.containers[0].resources.requests.cpu)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.prefill.containers[0].resources.limits."rdma/ib")' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e 'del(.prefill.containers[0].resources.requests."rdma/ib")' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e '.decode.containers[0].resources.limits["nvidia.com/gpu"] = "1"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e '.decode.containers[0].resources.requests["nvidia.com/gpu"] = "1"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e '.prefill.replicas = 1' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e '.decode.volumes[1].emptyDir.sizeLimit = "2Gi"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            yq e '.prefill.volumes[1].emptyDir.sizeLimit = "2Gi"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+
+            # Verify the slimmed down values
+            echo "📋 Verifying transformation results..."
+            echo "Model in ms-pd:"
+            yq e '.modelArtifacts.uri' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            echo "GPU count in ms-pd decode:"
+            yq e '.decode.containers[0].resources.limits["nvidia.com/gpu"]' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            echo "Replicas in ms-pd prefill:"
+            yq e '.prefill.replicas' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            echo "SHM size in decode:"
+            yq e '.decode.volumes[1].emptyDir.sizeLimit' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+
+            # Validate YAML syntax
+            echo "Validating YAML syntax..."
+            yq eval '.' quickstart/examples/pd-disaggregation/ms-pd/values.yaml > /dev/null && echo "ms-pd/values.yaml: Valid"
+            echo "✅ All YAML files are valid"
+
+            # Check for malformed resource quantities
+            echo "🔍 Checking resource quantities format..."
+            echo "Decode GPU limits:"
+            yq e '.decode.containers[0].resources.limits | keys' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            echo "Decode GPU requests:"
+            yq e '.decode.containers[0].resources.requests | keys' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            echo "Prefill GPU limits:"
+            yq e '.prefill.containers[0].resources.limits | keys' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            echo "Prefill GPU requests:"
+            yq e '.prefill.containers[0].resources.requests | keys' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+
+            # Display complete transformed files for debugging
+            echo ""
+            echo "🔍 === Completed transformed values files ==="
+            echo ""
+            echo "ms-pd/values.yaml (transformed):"
+            echo "---"
+            cat quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+            echo "---"
+            echo ""
+            echo "infra-pd/values.yaml:"
+            echo "---"
+            cat quickstart/examples/pd-disaggregation/infra-pd/values.yaml
+            echo "---"
+            echo ""
+            echo "gaie-pd/values.yaml:"
+            echo "---"
+            cat quickstart/examples/pd-disaggregation/gaie-pd/values.yaml
+            echo "---"
+            echo ""
+            echo "=== End of values files output ==="
           EOF
 
       - name: Run quickstart install-deps
@@ -216,9 +303,7 @@ jobs:
               sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
               sudo apt-get update
-
               sudo apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
               sudo usermod -aG docker ubuntu
               mkdir -p ~/.config/containers/
           EOF
@@ -242,7 +327,6 @@ jobs:
             sudo dpkg -i cuda-keyring_1.1-1_all.deb
             sudo apt-get update
             sudo apt-get -y install cuda-toolkit-12-8
-
             sudo apt-get install -y nvidia-open nvtop nload
           EOF
 
@@ -308,29 +392,11 @@ jobs:
   deploy-and-validate:
     needs: setup
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        deployment:
-          - name: precise-prefix-cache-aware
-            namespace: llm-d-precise
-            installer_args: "-r infra-kv-events"
-            example_dir: examples/precise-prefix-cache-aware
-            log_file: llmd-precise-installer.log
-            helm_log_file: precise-prefix-deployment.log
-
-          - name: inference-scheduling
-            namespace: llm-d-inference-scheduling
-            installer_args: "-r infra-inference-scheduling"
-            example_dir: examples/inference-scheduling
-            log_file: llmd-inference-installer.log
-            helm_log_file: inference-scheduling-deployment.log
-
     env:
       INSTANCE_IP: ${{ needs.setup.outputs.instance_ip }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      NAMESPACE: ${{ matrix.deployment.namespace }}
-      GATEWAY_TYPE: ${{ github.event.inputs.gateway_type || 'kgateway' }}
+      NAMESPACE: llm-d-pd
+      GATEWAY_TYPE: ${{ github.event.inputs.gateway_type || 'istio' }}
 
     steps:
       - name: Checkout repository
@@ -345,42 +411,31 @@ jobs:
 
       - name: Run installer to deploy llm-d infrastructure
         run: |
-          # This script now includes a file lock to serialize this step since the kgateway CRD install currently fails
           ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP "HF_TOKEN=$HF_TOKEN GATEWAY_TYPE=$GATEWAY_TYPE bash -s" <<'EOF'
           set -euo pipefail
-          LOCK_DIR="/tmp/installer.lock"
-          echo "Attempting to acquire lock: ${LOCK_DIR}"
-          # Loop until the lock directory can be created
-          while ! mkdir "${LOCK_DIR}" 2>/dev/null; do
-             echo "Lock is held by another process. Waiting 10 seconds..."
-             sleep 10
-          done
-          echo "Lock acquired."
-          # Ensure the lock is released when the script exits
-          trap 'echo "Releasing lock..."; rmdir "$LOCK_DIR" 2>/dev/null || true' exit
           set -x
           cd llm-d-infra/quickstart
-          echo "Deploying llm-d infrastructure into namespace: ${{ matrix.deployment.namespace }} ..."
+          echo "Deploying llm-d infrastructure for PD-Disaggregation into namespace: llm-d-pd ..."
           ./llmd-infra-installer.sh \
-              --namespace "${{ matrix.deployment.namespace }}" \
-              ${{ matrix.deployment.installer_args }} \
-              --gateway "$GATEWAY_TYPE" \
-              --disable-metrics-collection | tee ~/${{ matrix.deployment.log_file }}
+              --namespace "llm-d-pd" \
+              -r infra-pd \
+              -f examples/pd-disaggregation/infra-pd/values.yaml \
+              --disable-metrics-collection | tee ~/llmd-pd-installer.log
           EOF
 
-      - name: Deploy example deployment
+      - name: Deploy PD-Disaggregation example
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP << EOF
             set -euo pipefail
             set -x
-            cd llm-d-infra/quickstart/${{ matrix.deployment.example_dir }}
-            echo "Deploying ${{ matrix.deployment.name }} example..."
-            helmfile --selector managedBy=helmfile apply helmfile.yaml --skip-diff-on-install | tee ~/${{ matrix.deployment.helm_log_file }}
+            cd llm-d-infra/quickstart/examples/pd-disaggregation
+            echo "Deploying PD-Disaggregation example with slim configuration..."
+            helmfile --selector managedBy=helmfile apply -f helmfile.yaml --skip-diff-on-install | tee ~/pd-disaggregation-deployment.log
             echo "
 
             ---
 
-            " >> ~/${{ matrix.deployment.helm_log_file }}
+            " >> ~/pd-disaggregation-deployment.log
           EOF
 
       - name: Upload helm get all
@@ -388,9 +443,9 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP << EOF
             set -euo pipefail
             set -x
-            BACKUP_NAMESPACE=${{ matrix.deployment.namespace }} /bin/sh llm-d-infra/.github/scripts/e2e/helm-get-all.sh \
-              ~/${{ matrix.deployment.helm_log_file }} \
-              llm-d-infra/quickstart/${{ matrix.deployment.example_dir }}/helmfile.yaml
+            BACKUP_NAMESPACE="llm-d-pd" /bin/sh llm-d-infra/.github/scripts/e2e/helm-get-all.sh \
+              ~/pd-disaggregation-deployment.log \
+              llm-d-infra/quickstart/examples/pd-disaggregation/helmfile.yaml
           EOF
 
       - name: Wait for all pods to be ready
@@ -402,8 +457,8 @@ jobs:
               --for=condition=Ready \
               --all \
               -n "${NAMESPACE}" \
-              --timeout=6m
-            sleep 120 # TODO: remove this once examples have readiness probes
+              --timeout=10m
+            sleep 180 # Allow extra time for model loading in PD setup
             echo "✅ All pods are ready."
             kubectl get pods -n "${NAMESPACE}"
           EOF
@@ -420,6 +475,14 @@ jobs:
             echo ""
             echo "=== Helm releases ==="
             helm list -n "${NAMESPACE}" || true
+            echo ""
+            echo "=== PD-specific resources ==="
+            echo "Inference Models:"
+            kubectl get inferencemodels -n "${NAMESPACE}" || true
+            echo "Inference Pools:"
+            kubectl get inferencepools -n "${NAMESPACE}" || true
+            echo "HTTP Routes:"
+            kubectl get httproutes -n "${NAMESPACE}" || true
           EOF
 
       - name: Apply Istio DestinationRule
@@ -453,46 +516,66 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP \
               "kubectl apply -n \"$NS\" -f /tmp/destinationrule.yaml && rm /tmp/destinationrule.yaml"
 
-      - name: Inference test
+      - name: PD-Disaggregation inference test
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@"$INSTANCE_IP" <<EOF
             set -euo pipefail
             set -x
             cd llm-d-infra/.github/scripts/e2e
+
+            echo "🧪 Running PD-Disaggregation specific tests..."
+            # Test the specific model and endpoints for PD setup
             ./e2e-validate.sh -n "${NAMESPACE}"
+
+            # Additional PD-specific validation
+            echo "🔍 Verifying PD-Disaggregation specific functionality..."
+
+            # Check that we have both prefill and decode pods
+            PREFILL_PODS=\$(kubectl get pods -n "${NAMESPACE}" -l app.kubernetes.io/component=prefill --no-headers | wc -l)
+            DECODE_PODS=\$(kubectl get pods -n "${NAMESPACE}" -l app.kubernetes.io/component=decode --no-headers | wc -l)
+
+            echo "Prefill pods: \$PREFILL_PODS"
+            echo "Decode pods: \$DECODE_PODS"
+
+            if [ "\$PREFILL_PODS" -lt 1 ] || [ "\$DECODE_PODS" -lt 1 ]; then
+              echo "❌ Missing prefill or decode pods for PD setup"
+              exit 1
+            fi
+
+            echo "✅ PD-Disaggregation validation completed successfully"
           EOF
 
       - name: Collect and upload Kubernetes pod logs
         if: always()
         run: |
           echo "Collecting logs for namespace: ${NAMESPACE}"
-          REMOTE_TARBALL="pod-logs-${{ matrix.deployment.name }}.tar.gz"
+          REMOTE_TARBALL="pod-logs-pd-disaggregation.tar.gz"
           ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP << EOF
-            mkdir -p pod-logs-${{ matrix.deployment.name }}
-            cd pod-logs-${{ matrix.deployment.name }}
+            mkdir -p pod-logs-pd-disaggregation
+            cd pod-logs-pd-disaggregation
             echo "Fetching ${NAMESPACE} pods log..."
             kubectl get pods -n "${NAMESPACE}" --no-headers -o custom-columns=":metadata.name" \
             | xargs -I{} sh -c 'kubectl logs --all-containers=true -n "${NAMESPACE}" {} > "{}.log" 2>&1'
             echo "Fetching ${NAMESPACE} pods descriptions..."
             kubectl get pods -n "${NAMESPACE}" --no-headers -o custom-columns=":metadata.name" \
             | xargs -I{} sh -c 'kubectl describe pod -n "${NAMESPACE}" {} > "{}-describe.log" 2>&1'
-            mv ~/${{ matrix.deployment.log_file }} . || true
-            mv ~/${{ matrix.deployment.helm_log_file }} . || true
+            mv ~/llmd-pd-installer.log . || true
+            mv ~/pd-disaggregation-deployment.log . || true
             mv ~/install-deps.log . || true
             cd ..
-            tar -czf "$REMOTE_TARBALL" pod-logs-${{ matrix.deployment.name }}
+            tar -czf "$REMOTE_TARBALL" pod-logs-pd-disaggregation
           EOF
           scp -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP:"$REMOTE_TARBALL" .
-          mkdir -p extracted-logs-${{ matrix.deployment.name }}
-          tar -xzf "$REMOTE_TARBALL" -C extracted-logs-${{ matrix.deployment.name }}
+          mkdir -p extracted-logs-pd-disaggregation
+          tar -xzf "$REMOTE_TARBALL" -C extracted-logs-pd-disaggregation
           echo "Logs downloaded from the AWS instance."
 
       - name: Upload pod logs as artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: llmd-pod-logs-${{ matrix.deployment.name }}
-          path: extracted-logs-${{ matrix.deployment.name }}
+          name: llmd-pod-logs-pd-disaggregation
+          path: extracted-logs-pd-disaggregation
 
   terminate:
     needs: [setup, deploy-and-validate]
