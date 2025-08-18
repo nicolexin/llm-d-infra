@@ -31,7 +31,7 @@ jobs:
         )
       )
     runs-on: ubuntu-latest
-    
+
     env:
       GCP_PROJECT_ID: llm-d-scale
       GKE_CLUSTER_NAME: llm-d-e2e-us-east4
@@ -78,7 +78,7 @@ jobs:
       - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials "${{ env.GKE_CLUSTER_NAME }}" --zone "${{ env.GKE_CLUSTER_ZONE }}"
-          
+
       - name: Install Helm and Helmfile
         run: |
           sudo apt-get update && sudo apt-get install -y helm helmfile
@@ -105,14 +105,14 @@ jobs:
       - name: Verify installation and run inference tests
         run: |
           GATEWAY_NAME=infra-inference-scheduling-inference-gateway
-          
+
           # Wait for the Gateway IP to be assigned
           sleep 120
-          
+
           # Get the Gateway IP
           IP=$(kubectl get gateway/${GATEWAY_NAME} -n "${{ env.NAMESPACE }}" -o jsonpath='{.status.addresses[0].value}')
           PORT=80
-          
+
           if [[ -z "$IP" ]]; then
             echo "❌ Gateway IP not found."
             exit 1
@@ -134,7 +134,7 @@ jobs:
           response=$(curl -s -X POST "http://${gateway_ip}/v1/chat/completions" \
             -H "Content-Type: application/json" \
             -d '{"messages":[{"role":"system","content":"You are an AI assistant."},{"role":"user","content":"What is the capital of France?"}],"max_tokens":15}')
-          
+
           echo "Inference Response: $response"
 
           if [[ "$response" =~ "Paris" ]]; then
@@ -149,6 +149,6 @@ jobs:
         run: |
           cd examples/inference-scheduling
           helmfile destroy --namespace "${{ env.NAMESPACE }}" --selector managedBy=helmfile
-          
+
           cd ../.. # Back to repo root
           helm uninstall infra-inference-scheduling --namespace "${{ env.NAMESPACE }}"
