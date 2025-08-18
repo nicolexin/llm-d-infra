@@ -18,6 +18,9 @@ on:
         default: 'main'
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   deploy_and_validate:
     if: >
@@ -47,7 +50,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        with:
+          persist-credentials: false
       - name: Determine if pr_or_branch is a PR number
         id: check_pr
         run: |
