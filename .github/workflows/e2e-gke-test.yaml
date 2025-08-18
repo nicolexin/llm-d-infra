@@ -1,6 +1,10 @@
 name: GKE llm-d Inference Scheduling Test
 
 on:
+  # This is for testing only, will remove later
+  pull_request:
+    types: [opened, synchronize, reopened]
+
   issue_comment:
     # Runs with a PR comment /run-e2e or /run-e2e-istio
     types: [created]
