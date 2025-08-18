@@ -24,6 +24,7 @@ permissions:
 jobs:
   deploy_and_validate:
     if: >
+      github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
       (
         github.event_name == 'issue_comment' &&
