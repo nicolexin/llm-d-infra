@@ -42,7 +42,7 @@ jobs:
 
     env:
       GCP_PROJECT_ID: llm-d-scale
-      GKE_CLUSTER_NAME: llm-d-e2e-us-east4
+      GKE_CLUSTER_NAME: llm-d-e2e-us-east5
       GKE_CLUSTER_ZONE: us-east5
       NAMESPACE: llm-d-inference-scheduling
       GATEWAY: gke-l7-regional-external-managed
