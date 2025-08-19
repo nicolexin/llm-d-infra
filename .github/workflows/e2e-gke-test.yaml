@@ -72,6 +72,7 @@ jobs:
 
       - name: Run llmd-infra-installer.sh
         run: |
+          ls
           cd llm-d-infra/quickstart
           ./llmd-infra-installer.sh --namespace "${{ env.NAMESPACE }}" -r infra-inference-scheduling --gateway "${{ env.GATEWAY }}" --disable-metrics-collection
         env:
