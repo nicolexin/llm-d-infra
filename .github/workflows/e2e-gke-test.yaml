@@ -72,15 +72,14 @@ jobs:
 
       - name: Run llmd-infra-installer.sh
         run: |
-          ls
-          cd llm-d-infra/quickstart
+          cd quickstart
           ./llmd-infra-installer.sh --namespace "${{ env.NAMESPACE }}" -r infra-inference-scheduling --gateway "${{ env.GATEWAY }}" --disable-metrics-collection
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
       - name: Deploy model service and GIE with Helmfile
         run: |
-          cd llm-d-infra/quickstart/examples/inference-scheduling
+          cd quickstart/examples/inference-scheduling
           helmfile apply \
             --namespace "${{ env.NAMESPACE }}" \
             --selector managedBy=helmfile \
@@ -135,7 +134,7 @@ jobs:
       - name: Cleanup deployment
         if: always()
         run: |
-          cd llm-d-infra/quickstart/examples/inference-scheduling
+          cd quickstart/examples/inference-scheduling
           helmfile destroy --namespace "${{ env.NAMESPACE }}" --selector managedBy=helmfile
 
           helm uninstall infra-inference-scheduling --namespace "${{ env.NAMESPACE }}"
