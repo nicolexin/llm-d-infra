@@ -1,4 +1,4 @@
-name: GKE llm-d Inference Scheduling Test
+name: GKE Inference Scheduling Test
 
 on:
   # This is for testing only, will remove later
@@ -78,7 +78,7 @@ jobs:
       - name: Run llmd-infra-installer.sh
         run: |
           cd quickstart
-          ./llmd-infra-installer.sh --namespace "${{ env.NAMESPACE }}" -r infra-inference-scheduling --gateway "${{ env.GATEWAY }}" --disable-metrics-collection
+          ./llmd-infra-installer.sh --namespace "${{ env.NAMESPACE }}" -r infra-inference-scheduling --gateway "${{ env.GATEWAY }}"
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
