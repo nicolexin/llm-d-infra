@@ -70,6 +70,11 @@ jobs:
         run: |
           gcloud container clusters get-credentials "${{ env.GKE_CLUSTER_NAME }}" --zone "${{ env.GKE_CLUSTER_ZONE }}"
 
+      - name: Install dependencies
+        run: |
+          cd quickstart
+          ./install-deps.sh
+
       - name: Run llmd-infra-installer.sh
         run: |
           cd quickstart
