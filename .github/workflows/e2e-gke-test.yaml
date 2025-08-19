@@ -70,10 +70,6 @@ jobs:
         run: |
           gcloud container clusters get-credentials "${{ env.GKE_CLUSTER_NAME }}" --zone "${{ env.GKE_CLUSTER_ZONE }}"
 
-      - name: Install Helm and Helmfile
-        run: |
-          sudo apt-get update && sudo apt-get install -y helm helmfile
-
       - name: Run llmd-infra-installer.sh
         run: |
           cd llm-d-infra/quickstart
