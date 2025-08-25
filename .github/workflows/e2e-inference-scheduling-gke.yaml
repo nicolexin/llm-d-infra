@@ -5,11 +5,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+  # Runs with a PR comment /run-gke-e2e
   issue_comment:
-    # Runs with a PR comment /run-e2e or /run-e2e-istio
-    types: [created]
+    
 #  schedule: # TODO: enable once validated functional
 #    - cron: '0 8 * * *'  # 4AM Eastern (08:00 UTC)
+
   workflow_dispatch:
     inputs:
       pr_or_branch:
