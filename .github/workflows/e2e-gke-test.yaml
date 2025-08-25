@@ -138,7 +138,7 @@ jobs:
       - name: Verify installation and run inference tests
         run: |
           cd .github/scripts/e2e
-          ./e2e-validate.sh -n "${NAMESPACE}" -v
+          ./e2e-validate.sh -n "${NAMESPACE}"
 
       - name: Cleanup deployment
         if: always()
