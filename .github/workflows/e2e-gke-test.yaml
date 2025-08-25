@@ -97,7 +97,6 @@ jobs:
             --all \
             -n "${NAMESPACE}" \
             --timeout=6m
-          sleep 120 # TODO: remove this once examples have readiness probes
           echo "✅ All pods are ready."
           kubectl get pods -n "${NAMESPACE}"
 
@@ -139,7 +138,7 @@ jobs:
           ./e2e-validate.sh -n "${NAMESPACE}" -v
 
       - name: Cleanup deployment
-        if: always()
+        #if: always()
         run: |
           cd quickstart/examples/inference-scheduling
           helmfile destroy --namespace "${{ env.NAMESPACE }}" --selector managedBy=helmfile
