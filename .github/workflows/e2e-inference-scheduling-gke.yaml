@@ -165,10 +165,10 @@ jobs:
             cd pod-logs-inference-scheduling
             echo "Fetching ${NAMESPACE} pods log..."
             kubectl get pods -n "${NAMESPACE}" --no-headers -o custom-columns=":metadata.name" \
-            | xargs -I{} sh -c 'kubectl logs --all-containers=true -n "${NAMESPACE}" {} > "~/{}.log" 2>&1'
+            | xargs -I{} sh -c 'kubectl logs --all-containers=true -n "${NAMESPACE}" {} > "{}.log" 2>&1'
             echo "Fetching ${NAMESPACE} pods descriptions..."
             kubectl get pods -n "${NAMESPACE}" --no-headers -o custom-columns=":metadata.name" \
-            | xargs -I{} sh -c 'kubectl describe pod -n "${NAMESPACE}" {} > "~/{}-describe.log" 2>&1'
+            | xargs -I{} sh -c 'kubectl describe pod -n "${NAMESPACE}" {} > "{}-describe.log" 2>&1'
             mv ~/llmd-inference-installer.log . || true
             mv ~/inference-scheduling-deployment.log . || true
             mv ~/install-deps.log . || true
