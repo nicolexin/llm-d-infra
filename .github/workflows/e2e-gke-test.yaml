@@ -92,7 +92,46 @@ jobs:
 
       - name: Wait for all pods to be ready
         run: |
-          kubectl wait pod --for=condition=Ready --all -n "${{ env.NAMESPACE }}" --timeout=15m
+          kubectl wait pod \
+            --for=condition=Ready \
+            --all \
+            -n "${NAMESPACE}" \
+            --timeout=6m
+          sleep 120 # TODO: remove this once examples have readiness probes
+          echo "✅ All pods are ready."
+          kubectl get pods -n "${NAMESPACE}"
+
+      - name: Wait for gateway to be ready
+        run: |
+          kubectl wait gateway \
+            --for=condition=Programmed=True \
+            --timeout=300s
+          echo "✅ Gateway is ready."
+          kubectl get gateway -n "${NAMESPACE}"
+
+      - name: Show deployment status
+        run: |
+          echo "=== Deployments ==="
+          kubectl get deployments -n "${NAMESPACE}"
+          echo ""
+          echo "=== Replica Sets ==="
+          kubectl get replicasets -n "${NAMESPACE}"
+          echo ""
+          echo "=== Pods ==="
+          kubectl get pods -n "${NAMESPACE}"
+          echo ""
+          echo "=== Services ==="
+          kubectl get svc -n "${NAMESPACE}"
+          echo ""
+          echo "=== Helm releases ==="
+          helm list -n "${NAMESPACE}" || true
+          echo ""
+          echo "=== Inference Pools ==="
+          kubectl get inferencepools -n "${NAMESPACE}" || true
+          echo ""
+          echo "=== HTTPRoutes ==="
+          kubectl get httproutes -n "${NAMESPACE}" || true
+          echo ""
 
       - name: Verify installation and run inference tests
         run: |
