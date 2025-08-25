@@ -96,45 +96,8 @@ jobs:
 
       - name: Verify installation and run inference tests
         run: |
-          GATEWAY_NAME=infra-inference-scheduling-inference-gateway
-
-          # Wait for the Gateway IP to be assigned
-          sleep 120
-
-          # Get the Gateway IP
-          IP=$(kubectl get gateway/${GATEWAY_NAME} -n "${{ env.NAMESPACE }}" -o jsonpath='{.status.addresses[0].value}')
-          PORT=80
-
-          if [[ -z "$IP" ]]; then
-            echo "❌ Gateway IP not found."
-            exit 1
-          fi
-
-          echo "Gateway IP: $IP"
-
-          echo "➡️ Verifying /v1/models endpoint"
-          curl_models_output=$(curl http://${IP}:${PORT}/v1/models -H "Content-Type: application/json" | jq .)
-          echo "Output: $curl_models_output"
-          if [[ "$curl_models_output" =~ "Qwen/Qwen3-0.6B" ]]; then
-            echo "✅ /v1/models endpoint check passed."
-          else
-            echo "❌ /v1/models endpoint check failed."
-            exit 1
-          fi
-
-          # Send a simple inference request to verify end-to-end functionality
-          response=$(curl -s -X POST "http://${gateway_ip}/v1/chat/completions" \
-            -H "Content-Type: application/json" \
-            -d '{"messages":[{"role":"system","content":"You are an AI assistant."},{"role":"user","content":"What is the capital of France?"}],"max_tokens":15}')
-
-          echo "Inference Response: $response"
-
-          if [[ "$response" =~ "Paris" ]]; then
-            echo "✅ End-to-end test successful!"
-          else
-            echo "❌ End-to-end test failed. Response did not contain 'Paris'."
-            exit 1
-          fi
+          cd llm-d-infra/.github/scripts/e2e
+          ./e2e-validate.sh -n "${NAMESPACE}"
 
       - name: Cleanup deployment
         #if: always()
