@@ -106,3 +106,4 @@ jobs:
           helmfile destroy --namespace "${{ env.NAMESPACE }}" --selector managedBy=helmfile
 
           helm uninstall infra-inference-scheduling --namespace "${{ env.NAMESPACE }}"
+ 
