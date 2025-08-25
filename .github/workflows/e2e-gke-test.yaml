@@ -96,7 +96,7 @@ jobs:
 
       - name: Verify installation and run inference tests
         run: |
-          cd llm-d-infra/.github/scripts/e2e
+          cd .github/scripts/e2e
           ./e2e-validate.sh -n "${NAMESPACE}"
 
       - name: Cleanup deployment
