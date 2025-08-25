@@ -161,8 +161,8 @@ jobs:
       - name: Collect and upload Kubernetes pod logs
         if: always()
         run: |
-            mkdir -p logs-inference-scheduling
-            cd logs-inference-scheduling
+            mkdir -p pod-logs-inference-scheduling
+            cd pod-logs-inference-scheduling
             echo "Fetching ${NAMESPACE} pods log..."
             kubectl get pods -n "${NAMESPACE}" --no-headers -o custom-columns=":metadata.name" \
             | xargs -I{} sh -c 'kubectl logs --all-containers=true -n "${NAMESPACE}" {} > "~/{}.log" 2>&1'
@@ -170,7 +170,7 @@ jobs:
             kubectl get pods -n "${NAMESPACE}" --no-headers -o custom-columns=":metadata.name" \
             | xargs -I{} sh -c 'kubectl describe pod -n "${NAMESPACE}" {} > "~/{}-describe.log" 2>&1'
             mv ~/llmd-inference-installer.log . || true
-            mv ~/helm_log_file: inference-scheduling-deployment.log . || true
+            mv ~/inference-scheduling-deployment.log . || true
             mv ~/install-deps.log . || true
 
       - name: Upload pod logs as artifact
@@ -178,7 +178,7 @@ jobs:
         if: always()
         with:
           name: llmd-pod-logs-inference-scheduling
-          path: logs-inference-scheduling
+          path: pod-logs-inference-scheduling
 
       - name: Cleanup deployment
         if: always()
