@@ -106,6 +106,7 @@ jobs:
           GATEWAY_NAME=infra-inference-scheduling-inference-gateway
           kubectl wait gateway/${GATEWAY_NAME} \
             --for=condition=Programmed=True \
+            -n "${NAMESPACE}" \
             --timeout=300s
           echo "✅ Gateway is ready."
           kubectl get gateway -n "${NAMESPACE}"
