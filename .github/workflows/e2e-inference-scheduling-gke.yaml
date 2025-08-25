@@ -74,12 +74,16 @@ jobs:
       - name: Install dependencies
         run: |
           cd quickstart
-          ./install-deps.sh
+          ./install-deps.sh | tee ~/install-deps.log
 
       - name: Run llmd-infra-installer.sh
         run: |
           cd quickstart
-          ./llmd-infra-installer.sh --namespace "${{ env.NAMESPACE }}" -r infra-inference-scheduling --gateway "${{ env.GATEWAY }}"
+          ./llmd-infra-installer.sh \
+            --namespace "${{ env.NAMESPACE }}" \
+            -r infra-inference-scheduling \
+            --gateway "${{ env.GATEWAY }}" \
+            | tee ~/llmd-inference-installer.log
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
@@ -89,7 +93,20 @@ jobs:
           helmfile apply \
             --namespace "${{ env.NAMESPACE }}" \
             --selector managedBy=helmfile \
-            -f gke.helmfile.yaml --skip-diff-on-install
+            -f gke.helmfile.yaml \
+            --skip-diff-on-install \
+            | tee ~/inference-scheduling-deployment.log
+          echo "---------------------------------------" >> ~/inference-scheduling-deployment.log
+
+      - name: Upload helm get all
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP << EOF
+            set -euo pipefail
+            set -x
+            BACKUP_NAMESPACE=${{ matrix.deployment.namespace }} /bin/sh .github/scripts/e2e/helm-get-all.sh \
+              ~/inference-scheduling-deployment.log \
+              quickstart/examples/inference-scheduling/helmfile.yaml
+          EOF
 
       - name: Wait for all pods to be ready
         run: |
@@ -140,6 +157,28 @@ jobs:
         run: |
           cd .github/scripts/e2e
           ./e2e-validate.sh -n "${NAMESPACE}"
+
+      - name: Collect and upload Kubernetes pod logs
+        if: always()
+        run: |
+            mkdir -p logs-inference-scheduling
+            cd logs-inference-scheduling
+            echo "Fetching ${NAMESPACE} pods log..."
+            kubectl get pods -n "${NAMESPACE}" --no-headers -o custom-columns=":metadata.name" \
+            | xargs -I{} sh -c 'kubectl logs --all-containers=true -n "${NAMESPACE}" {} > "~/{}.log" 2>&1'
+            echo "Fetching ${NAMESPACE} pods descriptions..."
+            kubectl get pods -n "${NAMESPACE}" --no-headers -o custom-columns=":metadata.name" \
+            | xargs -I{} sh -c 'kubectl describe pod -n "${NAMESPACE}" {} > "~/{}-describe.log" 2>&1'
+            mv ~/llmd-inference-installer.log . || true
+            mv ~/helm_log_file: inference-scheduling-deployment.log . || true
+            mv ~/install-deps.log . || true
+
+      - name: Upload pod logs as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: llmd-pod-logs-inference-scheduling
+          path: logs-inference-scheduling
 
       - name: Cleanup deployment
         if: always()
