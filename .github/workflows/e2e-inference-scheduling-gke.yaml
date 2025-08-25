@@ -99,13 +99,9 @@ jobs:
 
       - name: Upload helm get all
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP << EOF
-            set -euo pipefail
-            set -x
-            BACKUP_NAMESPACE=${{ matrix.deployment.namespace }} /bin/sh .github/scripts/e2e/helm-get-all.sh \
-              ~/inference-scheduling-deployment.log \
-              quickstart/examples/inference-scheduling/helmfile.yaml
-          EOF
+          BACKUP_NAMESPACE=${{ matrix.deployment.namespace }} /bin/sh .github/scripts/e2e/helm-get-all.sh \
+            ~/inference-scheduling-deployment.log \
+            quickstart/examples/inference-scheduling/helmfile.yaml
 
       - name: Wait for all pods to be ready
         run: |
@@ -186,4 +182,3 @@ jobs:
           helmfile destroy --namespace "${{ env.NAMESPACE }}" --selector managedBy=helmfile
 
           helm uninstall infra-inference-scheduling --namespace "${{ env.NAMESPACE }}"
- 
