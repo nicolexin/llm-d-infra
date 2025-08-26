@@ -151,36 +151,30 @@ jobs:
       - name: Install dependencies
         run: |
           cd quickstart
-          ./install-deps.sh | tee ~/install-deps.log
+          ./dependencies/install-deps.sh | tee ~/install-deps.log
 
-      - name: Run llmd-infra-installer.sh
-        run: |
-          cd quickstart
-          ./llmd-infra-installer.sh \
-            --namespace "${{ env.NAMESPACE }}" \
-            -r infra-pd \
-            -f examples/pd-disaggregation/infra-pd/values.yaml \
-            --gateway "${{ env.GATEWAY }}" \
-            | tee ~/llmd-pd-installer.log
+      - name: Install chart dependencies (CRDs and Gateway provider)
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GATEWAY_TYPE: ${{ env.GATEWAY_TYPE }}
+        run: |
+          cd llm-d-infra/quickstart/gateway-control-plane-providers
+          ./install-gateway-provider-dependencies.sh
+          helmfile apply -e ${GATEWAY_TYPE}
 
       - name: Deploy model service and GIE with Helmfile
         run: |
           cd quickstart/examples/pd-disaggregation
-          helmfile apply \
-            --namespace "${{ env.NAMESPACE }}" \
-            --selector managedBy=helmfile \
-            -f gke.helmfile.yaml \
-            --skip-diff-on-install \
-            | tee ~/pd-disaggregation-deployment.log
+          helmfile apply -e ${GATEWAY_TYPE} | tee ~/pd-disaggregation-deployment.log
           echo "---------------------------------------" >> ~/pd-disaggregation-deployment.log
 
       - name: Upload helm get all
         run: |
-          BACKUP_NAMESPACE="llm-d-pd" /bin/sh .github/scripts/e2e/helm-get-all.sh \
-            ~/pd-disaggregation-deployment.log \
-            quickstart/examples/pd-disaggregation/helmfile.yaml
+          for release_name in infra-pd gaie-pd ms-pd; do
+            ./bin/sh llm-d-infra/.github/scripts/e2e/helm-get-all.sh \
+              ~/pd-disaggregation-deployment.log \
+              "$release_name" \
+              "llm-d-pd"
+          done
 
       - name: Wait for all pods to be ready
         run: |
