@@ -256,7 +256,7 @@ jobs:
           path: pod-logs-pd-disaggregation
 
       - name: Cleanup deployment
-        #if: always()
+        if: always()
         run: |
           cd quickstart/examples/pd-disaggregation
           helmfile destroy
