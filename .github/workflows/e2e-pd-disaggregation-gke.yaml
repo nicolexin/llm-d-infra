@@ -158,7 +158,7 @@ jobs:
       - name: Upload helm get all
         run: |
           for release_name in infra-pd gaie-pd ms-pd; do
-            ./bin/sh llm-d-infra/.github/scripts/e2e/helm-get-all.sh \
+            ./bin/sh .github/scripts/e2e/helm-get-all.sh \
               ~/pd-disaggregation-deployment.log \
               "$release_name" \
               "llm-d-pd"
