@@ -178,7 +178,7 @@ jobs:
 
       - name: Upload helm get all
         run: |
-          BACKUP_NAMESPACE="llm-d-pd" /bin/sh llm-d-infra/.github/scripts/e2e/helm-get-all.sh \
+          BACKUP_NAMESPACE="llm-d-pd" /bin/sh .github/scripts/e2e/helm-get-all.sh \
             ~/pd-disaggregation-deployment.log \
             llm-d-infra/quickstart/examples/pd-disaggregation/helmfile.yaml
 
