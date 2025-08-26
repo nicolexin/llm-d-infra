@@ -78,7 +78,7 @@ jobs:
         run: |
           cd quickstart/gateway-control-plane-providers
           ./install-gateway-provider-dependencies.sh
-          helmfile apply -f ${GATEWAY_TYPE}.helmfile.yaml
+          helmfile apply -e ${GATEWAY_TYPE}
 
       - name: Deploy model service and GIE with Helmfile
         env:
