@@ -167,7 +167,7 @@ jobs:
 
       - name: Deploy model service and GIE with Helmfile
         run: |
-          cd quickstart/examples/inference-scheduling
+          cd quickstart/examples/pd-disaggregation
           helmfile apply \
             --namespace "${{ env.NAMESPACE }}" \
             --selector managedBy=helmfile \
@@ -277,7 +277,7 @@ jobs:
       - name: Cleanup deployment
         #if: always()
         run: |
-          cd quickstart/examples/inference-scheduling
+          cd quickstart/examples/pd-disaggregation
           helmfile destroy --namespace "${{ env.NAMESPACE }}" --selector managedBy=helmfile
 
-          helm uninstall infra-inference-scheduling --namespace "${{ env.NAMESPACE }}"
+          helm uninstall infra-pd --namespace "${{ env.NAMESPACE }}"
