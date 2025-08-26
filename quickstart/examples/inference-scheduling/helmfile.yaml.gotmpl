@@ -50,10 +50,6 @@ releases:
       - {{ printf "infra-%s" $rn | quote }}
     values:
       - gaie-inference-scheduling/values.yaml
-    {{- if eq .Environment.Name "gke" }}
-      - provider:
-          name: {{ .Environment.Values.provider.name }}
-    {{- end }}
     labels:
       kind: inference-stack
 
