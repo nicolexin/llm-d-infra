@@ -76,7 +76,7 @@ jobs:
         env:
           GATEWAY_TYPE: ${{ env.GATEWAY_TYPE }}
         run: |
-          cd llm-d-infra/quickstart/gateway-control-plane-providers
+          cd quickstart/gateway-control-plane-providers
           ./install-gateway-provider-dependencies.sh
           helmfile apply -f ${GATEWAY_TYPE}.helmfile.yaml
 
