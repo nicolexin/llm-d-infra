@@ -136,11 +136,6 @@ jobs:
           cat quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           echo "---"
           echo ""
-          echo "infra-pd/values.yaml:"
-          echo "---"
-          cat quickstart/examples/pd-disaggregation/infra-pd/values.yaml
-          echo "---"
-          echo ""
           echo "gaie-pd/values.yaml:"
           echo "---"
           cat quickstart/examples/pd-disaggregation/gaie-pd/values.yaml
@@ -272,6 +267,4 @@ jobs:
         #if: always()
         run: |
           cd quickstart/examples/pd-disaggregation
-          helmfile destroy --namespace "${{ env.NAMESPACE }}" --selector managedBy=helmfile
-
-          helm uninstall infra-pd --namespace "${{ env.NAMESPACE }}"
+          helmfile destroy
