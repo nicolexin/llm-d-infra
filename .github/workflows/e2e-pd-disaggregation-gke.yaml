@@ -74,8 +74,6 @@ jobs:
       - name: Apply PD-Disaggregation slim transformation
         id: pd-transformation
         run: |
-          cd llm-d-infra
-
           echo "Applying pd-disaggregation slim values..."
           # Transform ms-pd/values.yaml to a scaled-down deployment
           # Change model to lightweight version
