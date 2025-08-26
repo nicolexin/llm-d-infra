@@ -173,6 +173,4 @@ jobs:
         if: always()
         run: |
           cd quickstart/examples/inference-scheduling
-          helmfile destroy --namespace "${{ env.NAMESPACE }}" --selector managedBy=helmfile
-
-          helm uninstall infra-inference-scheduling --namespace "${{ env.NAMESPACE }}"
+          helmfile destroy
