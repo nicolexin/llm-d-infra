@@ -275,7 +275,7 @@ jobs:
           path: pod-logs-pd-disaggregation
 
       - name: Cleanup deployment
-        if: always()
+        #if: always()
         run: |
           cd quickstart/examples/inference-scheduling
           helmfile destroy --namespace "${{ env.NAMESPACE }}" --selector managedBy=helmfile
