@@ -180,7 +180,7 @@ jobs:
         run: |
           BACKUP_NAMESPACE="llm-d-pd" /bin/sh .github/scripts/e2e/helm-get-all.sh \
             ~/pd-disaggregation-deployment.log \
-            llm-d-infra/quickstart/examples/pd-disaggregation/helmfile.yaml
+            quickstart/examples/pd-disaggregation/helmfile.yaml
 
       - name: Wait for all pods to be ready
         run: |
