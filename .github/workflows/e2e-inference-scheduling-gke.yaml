@@ -1,15 +1,11 @@
 name: GKE Inference Scheduling Test
 
 on:
-  # This is for testing only, will remove later
-  pull_request:
-    types: [opened, synchronize, reopened]
-
   # Runs with a PR comment /run-gke-inference-scheduling
   issue_comment:
     types: [created]
 #  schedule: # TODO: enable once validated functional
-#    - cron: '0 8 * * *'  # 4AM Eastern (08:00 UTC)
+#    - cron: '0 8 * * *'  # 1AM PDT (08:00 UTC)
   workflow_dispatch:
     inputs:
       pr_or_branch:
@@ -167,7 +163,7 @@ jobs:
           path: pod-logs-inference-scheduling
 
       - name: Cleanup deployment
-        #if: always()
+        if: always()
         run: |
           cd quickstart/examples/inference-scheduling
           helmfile destroy
