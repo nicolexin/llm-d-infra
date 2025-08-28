@@ -84,6 +84,13 @@ jobs:
           helmfile apply -e ${GATEWAY_TYPE} | tee ~/inference-scheduling-deployment.log
           echo "---------------------------------------" >> ~/inference-scheduling-deployment.log
 
+      - name: Deploy HTTPRoute
+        run: |
+          cd quickstart/examples/inference-scheduling
+          echo "Deploying HTTPRoute..."
+          kubectl apply -f httproute.gke.yaml | tee ~/inference-scheduling-deployment.log
+          echo "---------------------------------------" >> ~/inference-scheduling-deployment.log
+
       - name: Upload helm get all
         run: |
           for release_name in infra-inference-scheduling gaie-inference-scheduling ms-inference-scheduling; do
@@ -170,3 +177,4 @@ jobs:
         run: |
           cd quickstart/examples/inference-scheduling
           helmfile destroy
+          kubectl delete -f httproute.gke.yaml

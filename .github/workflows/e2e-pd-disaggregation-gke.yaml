@@ -151,6 +151,13 @@ jobs:
           helmfile apply -e ${GATEWAY_TYPE} | tee ~/pd-disaggregation-deployment.log
           echo "---------------------------------------" >> ~/pd-disaggregation-deployment.log
 
+      - name: Deploy HTTPRoute
+        run: |
+          cd quickstart/examples/pd-disaggregation
+          echo "Deploying HTTPRoute..."
+          kubectl apply -f httproute.gke.yaml | tee ~/pd-disaggregation-deployment.log
+          echo "---------------------------------------" >> ~/pd-disaggregation-deployment.log
+
       - name: Upload helm get all
         run: |
           for release_name in infra-pd gaie-pd ms-pd; do
@@ -257,3 +264,4 @@ jobs:
         run: |
           cd quickstart/examples/pd-disaggregation
           helmfile destroy
+          kubectl delete -f httproute.gke.yaml
