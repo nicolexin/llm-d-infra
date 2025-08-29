@@ -81,7 +81,9 @@ jobs:
           yq e '.routing.modelName = "Qwen/Qwen3-0.6B"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.decode.containers[0].args[] | select(. == "--tensor-parallel-size" or . == "4"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.decode.containers[0].args[] | select(. == "--max-model-len" or . == "32000"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+          yq e '.prefill.containers[0].args += ["--max-num-seqs", "1"]' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.prefill.containers[0].args[] | select(. == "--max-model-len" or . == "32000"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+          yq e '.prefill.containers[0].args += ["--max-num-seqs", "1"]' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.decode.containers[0].resources.limits.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.decode.containers[0].resources.requests.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.decode.containers[0].resources.limits.cpu)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
@@ -177,7 +179,7 @@ jobs:
             --all \
             -n "${NAMESPACE}" \
             --timeout=10m
-          sleep 180 # Allow extra time for model loading in PD setup
+          sleep 300 # Allow extra time for model loading in PD setup
           echo "✅ All pods are ready."
           kubectl get pods -n "${NAMESPACE}"
 
