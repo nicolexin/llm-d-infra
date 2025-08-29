@@ -178,4 +178,3 @@ jobs:
           cd quickstart/examples/inference-scheduling
           helmfile destroy
           kubectl delete -f httproute.gke.yaml
- 
