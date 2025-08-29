@@ -81,7 +81,7 @@ jobs:
           yq e '.routing.modelName = "Qwen/Qwen3-0.6B"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.decode.containers[0].args[] | select(. == "--tensor-parallel-size" or . == "4"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.decode.containers[0].args[] | select(. == "--max-model-len" or . == "32000"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e '.prefill.containers[0].args += ["--max-num-seqs", "1"]' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+          yq e '.decode.containers[0].args += ["--max-num-seqs", "1"]' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.prefill.containers[0].args[] | select(. == "--max-model-len" or . == "32000"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e '.prefill.containers[0].args += ["--max-num-seqs", "1"]' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.decode.containers[0].resources.limits.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
