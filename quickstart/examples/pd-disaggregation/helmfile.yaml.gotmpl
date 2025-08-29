@@ -97,27 +97,3 @@ releases:
     {{- end }}
     labels:
       kind: inference-stack
-    hooks:
-      - events: [ "postsync" ]
-        command: bash
-        args:
-          - -c
-          - |
-            echo "Patching HTTPRoute to trigger reconciliation..."
-            kubectl patch httproute ms-pd-llm-d-modelservice \
-              -n llm-d-pd \
-              -p '{"metadata":{"labels":{"inferencepool":"gaie-pd"}}}' \
-              --type=merge
-      # NOTE: This is a temporary workaround.
-      - events: [ "postsync" ]
-        command: bash
-        args:
-          - -c
-          - |
-            if [ "${GATEWAY}" = "gke-l7-regional-external-managed" ]; then
-              echo "Removing timeout in HTTPRoute as GKE Gateway doesn't support it..."
-              kubectl patch httproute ms-pd-llm-d-modelservice \
-                -n ${NAMESPACE} \
-                --type=json \
-                -p='[{"op": "remove", "path": "/spec/rules/0/timeouts"}]' || echo "No timeouts found to remove"
-            fi
