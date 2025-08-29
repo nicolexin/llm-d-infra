@@ -1,9 +1,6 @@
 name: GKE Inference Scheduling Test
 
 on:
-  # This is for testing only, will remove later
-  pull_request:
-    types: [opened, synchronize, reopened]
   # Runs with a PR comment /run-gke-inference-scheduling
   issue_comment:
     types: [created]
@@ -173,7 +170,7 @@ jobs:
           path: pod-logs-inference-scheduling
 
       - name: Cleanup deployment
-        #if: always()
+        if: always()
         run: |
           cd quickstart/examples/inference-scheduling
           helmfile destroy
