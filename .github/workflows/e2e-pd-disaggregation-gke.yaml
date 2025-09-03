@@ -76,58 +76,22 @@ jobs:
         run: |
           echo "Applying pd-disaggregation slim values..."
           # Transform ms-pd/values.yaml to a scaled-down deployment
-          # Change model to lightweight version
-          yq e '.modelArtifacts.uri = "hf://Qwen/Qwen3-0.6B"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e '.routing.modelName = "Qwen/Qwen3-0.6B"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.decode.containers[0].args[] | select(. == "--tensor-parallel-size" or . == "4"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.decode.containers[0].args[] | select(. == "--max-model-len" or . == "32000"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e '.decode.containers[0].args += ["--max-num-seqs", "1"]' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.prefill.containers[0].args[] | select(. == "--max-model-len" or . == "32000"))' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e '.prefill.containers[0].args += ["--max-num-seqs", "1"]' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.decode.containers[0].resources.limits.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.decode.containers[0].resources.requests.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.decode.containers[0].resources.limits.cpu)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.decode.containers[0].resources.requests.cpu)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
+
           yq e 'del(.decode.containers[0].resources.limits."rdma/ib")' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.decode.containers[0].resources.requests."rdma/ib")' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.prefill.containers[0].resources.limits.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.prefill.containers[0].resources.requests.memory)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.prefill.containers[0].resources.limits.cpu)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e 'del(.prefill.containers[0].resources.requests.cpu)' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.prefill.containers[0].resources.limits."rdma/ib")' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e 'del(.prefill.containers[0].resources.requests."rdma/ib")' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e '.decode.containers[0].resources.limits["nvidia.com/gpu"] = "1"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e '.decode.containers[0].resources.requests["nvidia.com/gpu"] = "1"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           yq e '.prefill.replicas = 1' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e '.decode.volumes[1].emptyDir.sizeLimit = "2Gi"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          yq e '.prefill.volumes[1].emptyDir.sizeLimit = "2Gi"' -i quickstart/examples/pd-disaggregation/ms-pd/values.yaml
 
           # Verify the slimmed down values
           echo "📋 Verifying transformation results..."
-          echo "Model in ms-pd:"
-          yq e '.modelArtifacts.uri' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          echo "GPU count in ms-pd decode:"
-          yq e '.decode.containers[0].resources.limits["nvidia.com/gpu"]' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
           echo "Replicas in ms-pd prefill:"
           yq e '.prefill.replicas' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          echo "SHM size in decode:"
-          yq e '.decode.volumes[1].emptyDir.sizeLimit' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
 
           # Validate YAML syntax
           echo "Validating YAML syntax..."
           yq eval '.' quickstart/examples/pd-disaggregation/ms-pd/values.yaml > /dev/null && echo "ms-pd/values.yaml: Valid"
           echo "✅ All YAML files are valid"
-
-          # Check for malformed resource quantities
-          echo "🔍 Checking resource quantities format..."
-          echo "Decode GPU limits:"
-          yq e '.decode.containers[0].resources.limits | keys' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          echo "Decode GPU requests:"
-          yq e '.decode.containers[0].resources.requests | keys' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          echo "Prefill GPU limits:"
-          yq e '.prefill.containers[0].resources.limits | keys' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
-          echo "Prefill GPU requests:"
-          yq e '.prefill.containers[0].resources.requests | keys' quickstart/examples/pd-disaggregation/ms-pd/values.yaml
 
           # Display complete transformed files for debugging
           echo ""
