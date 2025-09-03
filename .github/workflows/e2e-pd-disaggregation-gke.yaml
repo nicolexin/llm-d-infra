@@ -143,7 +143,7 @@ jobs:
             --all \
             -n "${NAMESPACE}" \
             --timeout=10m
-          sleep 300 # Allow extra time for model loading in PD setup
+          sleep 600 # Allow extra time for model loading in PD setup
           echo "✅ All pods are ready."
           kubectl get pods -n "${NAMESPACE}"
 
