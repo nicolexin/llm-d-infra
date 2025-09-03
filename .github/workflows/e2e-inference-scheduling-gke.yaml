@@ -22,7 +22,6 @@ permissions:
 
 jobs:
   deploy_and_validate:
-    # This condition block is now correctly included
     if: >
       github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
@@ -47,14 +46,16 @@ jobs:
         accelerator:
           - name: GPU
             helmfile_env: gke
+            namespace: llm-d-inference-scheduler-gpu
           - name: TPU
             helmfile_env: gke_tpu
+            namespace: llm-d-inference-scheduler-tpu
 
     env:
       GCP_PROJECT_ID: llm-d-scale
       GKE_CLUSTER_NAME: llm-d-e2e-us-east5
       GKE_CLUSTER_ZONE: us-east5
-      NAMESPACE: llm-d-inference-scheduler
+      NAMESPACE: ${{ matrix.accelerator.namespace }}
       GATEWAY: gke-l7-regional-external-managed
       GATEWAY_TYPE: gke
       PR_OR_BRANCH: ${{ github.event.inputs.pr_or_branch }}
