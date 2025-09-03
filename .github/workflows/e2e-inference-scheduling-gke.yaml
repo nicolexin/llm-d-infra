@@ -181,7 +181,7 @@ jobs:
           path: pod-logs-inference-scheduling
 
       - name: Cleanup deployment
-        if: always()
+        #if: always()
         run: |
           cd quickstart/examples/inference-scheduling
           helmfile destroy -e ${{ matrix.accelerator.helmfile_env }}
