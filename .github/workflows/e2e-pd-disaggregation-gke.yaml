@@ -217,7 +217,6 @@ jobs:
             echo "Fetching ${NAMESPACE} pods descriptions..."
             kubectl get pods -n "${NAMESPACE}" --no-headers -o custom-columns=":metadata.name" \
             | xargs -I{} sh -c 'kubectl describe pod -n "${NAMESPACE}" {} > "{}-describe.log" 2>&1'
-            mv ~/llmd-pd-installer.log . || true
             mv ~/pd-disaggregation-deployment.log . || true
             mv ~/install-deps.log . || true
 
@@ -229,7 +228,7 @@ jobs:
           path: pod-logs-pd-disaggregation
 
       - name: Cleanup deployment
-        #if: always()
+        if: always()
         run: |
           cd quickstart/examples/pd-disaggregation
           helmfile destroy

@@ -158,7 +158,6 @@ jobs:
             echo "Fetching ${NAMESPACE} pods descriptions..."
             kubectl get pods -n "${NAMESPACE}" --no-headers -o custom-columns=":metadata.name" \
             | xargs -I{} sh -c 'kubectl describe pod -n "${NAMESPACE}" {} > "{}-describe.log" 2>&1'
-            mv ~/llmd-inference-installer.log . || true
             mv ~/inference-scheduling-deployment.log . || true
             mv ~/install-deps.log . || true
 
