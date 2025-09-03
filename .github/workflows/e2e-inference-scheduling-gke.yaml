@@ -1,6 +1,9 @@
 name: GKE Inference Scheduling Test
 
 on:
+  # This is for testing only, will remove later
+  pull_request:
+    types: [opened, synchronize, reopened]
   # Runs with a PR comment /run-gke-inference-scheduling
   issue_comment:
     types: [created]
@@ -19,6 +22,7 @@ permissions:
 
 jobs:
   deploy_and_validate:
+    # This condition block is now correctly included
     if: >
       github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
@@ -34,7 +38,17 @@ jobs:
           github.event.comment.author_association == 'COLLABORATOR'
         )
       )
+    name: Test on ${{ matrix.accelerator.name }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        accelerator:
+          - name: GPU
+            helmfile_env: gke
+          - name: TPU
+            helmfile_env: gke_tpu
 
     env:
       GCP_PROJECT_ID: llm-d-scale
@@ -74,11 +88,9 @@ jobs:
           ./dependencies/install-deps.sh | tee ~/install-deps.log
 
       - name: Deploy model service and GIE with Helmfile
-        env:
-          GATEWAY_TYPE: ${{ env.GATEWAY_TYPE }}
         run: |
           cd quickstart/examples/inference-scheduling
-          helmfile apply -e ${GATEWAY_TYPE} | tee ~/inference-scheduling-deployment.log
+          helmfile apply -e ${{ matrix.accelerator.helmfile_env }} | tee ~/inference-scheduling-deployment.log
           echo "---------------------------------------" >> ~/inference-scheduling-deployment.log
 
       - name: Deploy HTTPRoute
@@ -165,12 +177,12 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: llmd-pod-logs-inference-scheduling
+          name: llmd-pod-logs-${{ matrix.accelerator.name }}
           path: pod-logs-inference-scheduling
 
       - name: Cleanup deployment
         if: always()
         run: |
           cd quickstart/examples/inference-scheduling
-          helmfile destroy
+          helmfile destroy -e ${{ matrix.accelerator.helmfile_env }}
           kubectl delete -f httproute.gke.yaml
