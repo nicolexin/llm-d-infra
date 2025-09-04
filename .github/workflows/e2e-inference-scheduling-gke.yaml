@@ -47,7 +47,7 @@ jobs:
         accelerator:
           - name: GPU
             helmfile_env: gke
-            pod_readiness_sleep_seconds: 120
+            pod_readiness_sleep_seconds: 180
           - name: TPU
             helmfile_env: gke_tpu
             pod_readiness_sleep_seconds: 900
