@@ -117,7 +117,7 @@ jobs:
             --for=condition=Ready \
             --all \
             -n "${NAMESPACE}" \
-            --timeout=6m
+            --timeout=10m
           sleep ${{ matrix.accelerator.pod_readiness_sleep_seconds }} # TODO: remove this once examples have readiness probes
           echo "✅ All pods are ready."
           kubectl get pods -n "${NAMESPACE}"
@@ -183,7 +183,7 @@ jobs:
           path: pod-logs-inference-scheduling
 
       - name: Cleanup deployment
-        #if: always()
+        if: always()
         run: |
           cd quickstart/examples/inference-scheduling
           helmfile destroy -e ${{ matrix.accelerator.helmfile_env }}
