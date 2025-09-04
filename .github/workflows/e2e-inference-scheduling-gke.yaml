@@ -50,7 +50,7 @@ jobs:
             pod_readiness_sleep_seconds: 180
           - name: TPU
             helmfile_env: gke_tpu
-            pod_readiness_sleep_seconds: 900
+            pod_readiness_sleep_seconds: 1080
 
     env:
       GCP_PROJECT_ID: llm-d-scale
