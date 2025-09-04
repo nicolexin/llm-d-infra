@@ -47,8 +47,10 @@ jobs:
         accelerator:
           - name: GPU
             helmfile_env: gke
+            pod_readiness_sleep_seconds: 120
           - name: TPU
             helmfile_env: gke_tpu
+            pod_readiness_sleep_seconds: 900
 
     env:
       GCP_PROJECT_ID: llm-d-scale
@@ -116,7 +118,7 @@ jobs:
             --all \
             -n "${NAMESPACE}" \
             --timeout=6m
-          sleep 120 # TODO: remove this once examples have readiness probes
+          sleep ${{ matrix.accelerator.pod_readiness_sleep_seconds }} # TODO: remove this once examples have readiness probes
           echo "✅ All pods are ready."
           kubectl get pods -n "${NAMESPACE}"
 
