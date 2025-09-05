@@ -1,6 +1,9 @@
 name: GKE Inference Scheduling Test
 
 on:
+  # This is for testing only, will remove later
+  pull_request:
+    types: [opened, synchronize, reopened]
   # Runs with a PR comment /run-gke-inference-scheduling
   issue_comment:
     types: [created]
@@ -57,7 +60,7 @@ jobs:
       NAMESPACE: llm-d-inference-scheduling
       GATEWAY: gke-l7-regional-external-managed
       GATEWAY_TYPE: gke
-      PR_OR_BRANCH: ${{ github.event.inputs.pr_or_branch || github.event.issue.number }}
+      PR_OR_BRANCH: ${{ github.event.inputs.pr_or_branch || github.event.issue.number || github.event.number }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
     steps:
