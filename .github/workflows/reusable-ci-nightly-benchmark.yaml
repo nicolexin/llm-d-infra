@@ -691,7 +691,7 @@ jobs:
             git clone https://github.com/llm-d/llm-d.git
           else
             echo "### llm-d code is already present."
-            is_pr_test=$(git branch --show-current | grep -E "pr-[0-9]+" || true)
+            is_pr_test=$(echo $GITHUB_REF_NAME | grep -E "pr-[0-9]+" || true)
             if [[ -z $is_pr_test ]]; then
               echo "### Refreshing to origin/main and deleting llm-d-benchmark"
             # Refresh the persistent checkout so it doesn't run against stale guide config.
@@ -702,7 +702,7 @@ jobs:
             rm -rf ~/work/llm-d-benchmark/
           fi
           cd ~/work/llm-d/llm-d
-          echo "### llm-d code is present (branch $(git branch --show-current))"
+          echo "### llm-d code is present (GITHUB_REF_NAME=$GITHUB_REF_NAME, branch $(git branch --show-current))"
         shell: bash
 
       - name: Install llmdbenchmark
