@@ -950,7 +950,7 @@ jobs:
         shell: bash
 
       - name: Model Download
-        id: guide_model_download
+        id: infra_model_download
         if: env.LLMDBENCH_CICD_PERSISTENT_MODEL == 'true'
         run: |
           cd ~/work/llm-d-benchmark/llm-d-benchmark/
@@ -1037,6 +1037,13 @@ jobs:
             echo "### $(cat ~/work/lkcmd.txt); $LLMDBENCH_CMD ###"
             eval $LLMDBENCH_CMD
           fi
+        shell: bash
+
+      - name: Harness pod log (on failure)
+        id: infra_harness_pod_log
+        if: failure()
+        run: |
+          kubectl -n "$LLMDBENCH_CICD_NS" logs -l app=llmdbench-harness-launcher
         shell: bash
 
       - name: Teardown
@@ -1151,6 +1158,7 @@ jobs:
                [ "${{ steps.infra_create_nightly_prioclass.outcome }}" = "failure" ] || \
                [ "${{ steps.infra_label_node_for_simulated_accelerators.outcome }}" = "failure" ] || \
                [ "${{ steps.infra_handle_namesace_and_secret.outcome }}" = "failure" ] || \
+               [ "${{ steps.infra_model_download.outcome }}" = "failure" ] || \
                [ "${{ steps.infra_upload_results_to_gcs.outcome }}" = "failure" ] || \
                [ "${{ steps.infra_block_waiting_for_standalone_baseline.outcome }}" = "failure" ]; then
             CATEGORY="infra"
