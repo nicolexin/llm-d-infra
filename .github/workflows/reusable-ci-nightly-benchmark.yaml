@@ -978,6 +978,50 @@ jobs:
           fi
         shell: bash
 
+      - name: Display image list for all pods
+        id: guide_image_info
+        run: |
+          {
+              echo -e "POD\tCONTAINER\tIMAGE\tTAG"
+              for pod in $(kubectl -n "$NAMESPACE" get pods -o jsonpath='{.items[*].metadata.name}')
+              do
+                  kubectl -n "$NAMESPACE" get pod "$pod" -o jsonpath='{range .spec.containers[*]}{.name}{"\t"}{.image}{"\n"}{end}' \
+                  | while IFS=$'\t' read -r container image
+                  do
+                      [[ -z $container ]] && continue
+                      if [[ $image == *:* && $image != *:*/* ]]
+                      then
+                          tag=${image##*:}
+                          repo=${image%:*}
+                      else
+                          tag="latest"
+                          repo=$image
+                      fi
+                      echo -e "${pod}\t${container}\t${repo}\t${tag}"
+                  done
+              done
+          } | awk -F'\t' '
+          {
+              for (i = 1; i <= NF; i++) {
+                  len = length($i)
+                  if (len > width[i]) width[i] = len
+              }
+              line[NR] = $0
+              cols[NR] = NF
+          }
+          END {
+              for (r = 1; r <= NR; r++) {
+                  n = split(line[r], f, "\t")
+                  out = ""
+                  for (i = 1; i <= n; i++) {
+                      sep = (i < n) ? "  " : ""
+                      out = out sprintf("%-*s%s", width[i], f[i], sep)
+                  }
+                  print out
+              }
+          }'
+        shell: bash
+
       - name: Run
         id: benchmark_run
         run: |
