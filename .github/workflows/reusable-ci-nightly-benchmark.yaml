@@ -980,6 +980,7 @@ jobs:
 
       - name: Display image list for all pods
         id: guide_image_info
+        if: always()
         run: |
           {
               echo -e "POD\tCONTAINER\tIMAGE\tTAG"
