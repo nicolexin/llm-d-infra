@@ -101,6 +101,11 @@ on:
         required: false
         type: 'string'
         default: 'true'
+      gateway_api_version:
+        description: 'Gateway API version ("latest")'
+        required: false
+        type: 'string'
+        default: 'latest'
       gaie_version:
         description: 'Gateway API Inference Extension ("latest")'
         required: false
@@ -358,6 +363,7 @@ jobs:
       LLMDBENCH_WORKSPACE: ${{ inputs.workspace_dir || '/tmp/llmdbenchcicd' }}
       LLMDBENCH_HF_TOKEN: ${{ secrets.LLMDBENCH_HF_TOKEN }}
       HF_TOKEN: ${{ secrets.LLMDBENCH_HF_TOKEN }}
+      LLMDBENCH_CICD_GATEWAY_API_VERSION: ${{ inputs.gateway_api_version || 'latest' }}
       LLMDBENCH_CICD_GAIE_VERSION: ${{ inputs.gaie_version || 'latest' }}
       LLMDBENCH_CICD_ROUTER_RELEASE_VERSION: ${{ inputs.router_release_version || 'latest' }}
       LLMDBENCH_CICD_ROUTER_CHART_VERSION: ${{ inputs.router_chart_version || 'v0' }}
@@ -752,6 +758,11 @@ jobs:
           touch "$LLMDBENCH_CICD_CMD_LOG"
           export LLMDBENCH_CICD_SCENARIO_FILE="$LLMDBENCH_CICD_BENCHMARK_PATH/config/scenarios/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO.yaml"
           export LLMDBENCH_CICD_EFFECTIVE_GUIDE_NAME=$(echo $LLMDBENCH_CICD_SCENARIO | sed 's#/$##')
+          if [[ $LLMDBENCH_CICD_GATEWAY_API_VERSION == "latest" ]]; then
+            export LLMDBENCH_CICD_GATEWAY_API_URL=releases/latest/download
+          else
+            export LLMDBENCH_CICD_GATEWAY_API_URL=releases/download/${LLMDBENCH_CICD_GATEWAY_API_VERSION}
+          fi
           if [[ $LLMDBENCH_CICD_GAIE_VERSION == "latest" ]]; then
             export LLMDBENCH_CICD_GAIE_URL=releases/latest/download
           else
@@ -779,6 +790,18 @@ jobs:
           echo -n "; $lkcmd" >> "$LLMDBENCH_CICD_CMD_LOG"
           eval $lkcmd
           cat "$LLMDBENCH_CICD_SCENARIO_FILE" | yq '.scenario[0].kustomize.guideVariableOverrides.GUIDE_NAME'
+          #
+          echo "### Setting \"GATEWAY_API_VERSION\" to \"$LLMDBENCH_CICD_GATEWAY_API_VERSION\" in \"$LLMDBENCH_CICD_SCENARIO_FILE\""
+          lkcmd="yq -i \".scenario[0].kustomize.guideVariableOverrides.GATEWAY_API_VERSION = \\\"$LLMDBENCH_CICD_GATEWAY_API_VERSION\\\"\" $LLMDBENCH_CICD_SCENARIO_FILE"
+          echo -n "; $lkcmd" >> "$LLMDBENCH_CICD_CMD_LOG"
+          eval $lkcmd
+          cat "$LLMDBENCH_CICD_SCENARIO_FILE" | yq '.scenario[0].kustomize.guideVariableOverrides.GATEWAY_API_VERSION'
+          #
+          echo "### Setting \"GATEWAY_API_URL\" to \"$LLMDBENCH_CICD_GATEWAY_API_URL\" in \"$LLMDBENCH_CICD_SCENARIO_FILE\""
+          lkcmd="yq -i \".scenario[0].kustomize.guideVariableOverrides.GATEWAY_API_URL = \\\"$LLMDBENCH_CICD_GATEWAY_API_URL\\\"\" $LLMDBENCH_CICD_SCENARIO_FILE"
+          echo -n "; $lkcmd" >> "$LLMDBENCH_CICD_CMD_LOG"
+          eval $lkcmd
+          cat "$LLMDBENCH_CICD_SCENARIO_FILE" | yq '.scenario[0].kustomize.guideVariableOverrides.GATEWAY_API_URL'
           #
           echo "### Setting \"GAIE_VERSION\" to \"$LLMDBENCH_CICD_GAIE_VERSION\" in \"$LLMDBENCH_CICD_SCENARIO_FILE\""
           lkcmd="yq -i \".scenario[0].kustomize.guideVariableOverrides.GAIE_VERSION = \\\"$LLMDBENCH_CICD_GAIE_VERSION\\\"\" $LLMDBENCH_CICD_SCENARIO_FILE"
