@@ -828,6 +828,13 @@ jobs:
             echo " ### Setting harness executable to \"llm-d-benchmark.py\" in \"$LLMDBENCH_CICD_SCENARIO_FILE\""
             yq -i '.scenario[0].harness.executable = "llm-d-benchmark.py"' $LLMDBENCH_CICD_SCENARIO_FILE
 
+      - name: List images from kustomize manifest
+        id: prereqs_list_images_from_kustomize_manifests
+        if: env.LLMDBENCH_CICD_METHOD == 'kustomize'
+        run: |
+          LLMDBENCH_CICD_KUSTOMIZE_PATH=~/work/llm-d/llm-d/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO/mod
+          kubectl kustomize $LLMDBENCH_CICD_KUSTOMIZE_PATH  | grep "image: "
+
       - name: Apply overrides to kustomize manifests
         id: prereqs_apply_overrides_to_kustomize_manifests
         if: env.LLMDBENCH_CICD_METHOD == 'kustomize'
