@@ -832,7 +832,7 @@ jobs:
         id: prereqs_list_images_from_kustomize_manifests
         if: env.LLMDBENCH_CICD_METHOD == 'kustomize'
         run: |
-          LLMDBENCH_CICD_KUSTOMIZE_PATH=~/work/llm-d/llm-d/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO/mod
+          LLMDBENCH_CICD_KUSTOMIZE_PATH=~/work/llm-d/llm-d/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO/modelserver/$LLMDBENCH_CICD_ACCELERATOR/$LLMDBENCH_CICD_BACKEND/$LLMDBENCH_CICD_CONNECTOR/$LLMDBENCH_CICD_OFFLOADING_TARGET/$LLMDBENCH_CICD_INFRA_PROVIDER
           kubectl kustomize $LLMDBENCH_CICD_KUSTOMIZE_PATH  | grep "image: "
 
       - name: Apply overrides to kustomize manifests
